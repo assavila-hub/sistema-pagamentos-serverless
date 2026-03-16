@@ -1,5 +1,4 @@
 name: Deploy to Amazon ECS
-# O robô acorda sempre que houver um "push" na branch "main"
 on:
   push:
     branches:
@@ -12,7 +11,7 @@ env:
 jobs:
   deploy:
     name: Build and Deploy
-    runs-on: ubuntu-latest # O GitHub empresta-nos um computador Linux temporário
+    runs-on: ubuntu-latest
     steps:
     - name: 📥 Clonar o repositório
       uses: actions/checkout@v3
@@ -22,7 +21,10 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     - name: 🔨 Compilar o projeto com Maven
-      run: ./mvnw clean package -DskipTests
+      working-directory: ./payment-api  # <-- Robô, entra nesta pasta!
+      run: |
+        chmod +x mvnw
+        ./mvnw clean package -DskipTests
     - name: 🔐 Autenticar na AWS
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -33,6 +35,7 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
     - name: 🚀 Criar imagem Docker e enviar para ECR
+      working-directory: ./payment-api  # <-- O Dockerfile também está aqui!
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
